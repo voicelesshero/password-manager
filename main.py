@@ -5,8 +5,14 @@ import pyperclip
 import json
 import hashlib
 import base64
+import os
+import sys
 from cryptography.fernet import Fernet
 
+def resource_path(relative_path):
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)
 # ---------------------------- THEME ------------------------------- #
 BG_COLOR = "#2b2b2b"
 ENTRY_BG = "#3c3c3c"
@@ -229,7 +235,7 @@ if not check_master_password():
 window.deiconify()
 
 canvas = Canvas(width=300, height=300, bg=BG_COLOR, highlightthickness=0)
-logo_img = PhotoImage(file="logo3.png")
+logo_img = PhotoImage(file=resource_path("logo3.png"))
 canvas.create_image(150, 150, image=logo_img)
 canvas.grid(row=0, column=0, columnspan=3, pady=(0, 20))
 
