@@ -13,6 +13,7 @@ from argon2.exceptions import VerifyMismatchError
 from vault import add_entry, get_entry, update_entry, delete_entry, get_all_entries, get_entries_by_type, load_vault, save_vault
 from emergency import open_emergency_form
 import threading
+from categories import open_category_view
 
 ph = PasswordHasher()
 
@@ -292,5 +293,10 @@ emergency_btn = Button(text="Emergency Info", bg="#c0392b", fg=BTN_FG, relief="f
                        activebackground="#a93226", activeforeground=BTN_FG, cursor="hand2",
                        command=lambda: open_emergency_form(window, cipher, BG_COLOR, ENTRY_BG, ENTRY_FG, LABEL_FG, BTN_BG, BTN_FG, BTN_ACCENT, FONT, FONT_BOLD))
 emergency_btn.grid(row=6, column=1, columnspan=2, sticky="ew", pady=(8, 0), ipady=6)
+
+vault_btn = Button(text="View Vault", bg=BTN_ACCENT, fg=BTN_FG, relief="flat", font=FONT_BOLD,
+                   activebackground=BTN_BG, activeforeground=BTN_FG, cursor="hand2",
+                   command=lambda: open_category_view(window, cipher, BG_COLOR, ENTRY_BG, ENTRY_FG, LABEL_FG, BTN_BG, BTN_FG, BTN_ACCENT, FONT, FONT_BOLD))
+vault_btn.grid(row=7, column=1, columnspan=2, sticky="ew", pady=(8, 0), ipady=6)
 
 window.mainloop()
