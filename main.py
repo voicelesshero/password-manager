@@ -8,6 +8,10 @@ import base64
 import os
 import sys
 from cryptography.fernet import Fernet
+from argon2 import PasswordHasher
+from argon2.exceptions import VerifyMismatchError
+
+ph = PasswordHasher()
 
 def resource_path(relative_path):
     if hasattr(sys, '_MEIPASS'):
@@ -28,7 +32,8 @@ FONT_BOLD = ("Helvetica", 11, "bold")
 cipher = None  # holds the Fernet cipher once master password is verified
 
 def make_key(password):
-    # Convert master password into a valid 32-byte Fernet key
+    import hashlib
+    import base64
     raw = hashlib.sha256(password.encode()).digest()
     return base64.urlsafe_b64encode(raw)
 
@@ -42,7 +47,14 @@ def decrypt_data(encrypted_bytes: bytes) -> dict:
 
 # ---------------------------- MASTER PASSWORD ------------------------------- #
 def hash_password(password):
-    return hashlib.sha256(password.encode()).hexdigest()
+    return ph.hash(password)
+
+def verify_password(stored_hash, entered_password):
+    try:
+        ph.verify(stored_hash, entered_password)
+        return True
+    except VerifyMismatchError:
+        return False
 
 def check_master_password():
     global cipher
@@ -55,7 +67,7 @@ def check_master_password():
             window.destroy()
             return False
 
-        if hash_password(entered) != stored["master"]:
+        if not verify_password(stored["master"], entered):
             messagebox.showerror("Access Denied", "Incorrect master password.")
             window.destroy()
             return False
