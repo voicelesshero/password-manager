@@ -14,6 +14,7 @@ from vault import add_entry, get_entry, update_entry, delete_entry, get_all_entr
 from emergency import open_emergency_form
 import threading
 from categories import open_category_view
+from session import SessionManager
 
 ph = PasswordHasher()
 
@@ -99,6 +100,33 @@ def check_master_password():
         messagebox.showinfo("Success", "Master password set. Welcome!")
         return True
 
+# ---------------------------- FUNCTIONS ------------------------------- #
+def verify_master(entered):
+    try:
+        with open("master.json", "r") as f:
+            stored = json.load(f)
+        return verify_password(stored["master"], entered)
+    except FileNotFoundError:
+        return False
+
+def check_password_strength(password):
+    length = len(password)
+    has_upper = any(c.isupper() for c in password)
+    has_lower = any(c.islower() for c in password)
+    has_digit = any(c.isdigit() for c in password)
+    has_symbol = any(c in "!#$%&()*+" for c in password)
+
+    score = sum([length >= 8, length >= 12, has_upper, has_lower, has_digit, has_symbol])
+
+    if score <= 2:
+        return "Weak", "#e74c3c"
+    elif score <= 3:
+        return "Fair", "#e67e22"
+    elif score <= 4:
+        return "Strong", "#f1c40f"
+    else:
+        return "Very Strong", "#27ae60"
+
 # ---------------------------- PASSWORD GENERATOR ------------------------------- #
 def generate_password():
     letters = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',
@@ -116,15 +144,15 @@ def generate_password():
     password = "".join(password_list)
     password_entry.delete(0, END)
     password_entry.insert(0, password)
+    try:
+        update_strength()
+    except NameError:
+        pass
     pyperclip.copy(password)
 
-def clear_clipboard():
-    pyperclip.copy("")
-
-timer = threading.Timer(30, clear_clipboard)
-timer.daemon = True
-timer.start()
-
+    timer = threading.Timer(30, lambda: pyperclip.copy(""))
+    timer.daemon = True
+    timer.start()
 # ---------------------------- SAVE PASSWORD ------------------------------- #
 def save():
     website = website_entry.get()
@@ -229,7 +257,10 @@ window.withdraw()
 if not check_master_password():
     exit()
 
+
 window.deiconify()
+session = SessionManager(window, verify_master)
+
 
 canvas = Canvas(width=300, height=300, bg=BG_COLOR, highlightthickness=0)
 logo_img = PhotoImage(file=resource_path("logo3.png"))
@@ -240,6 +271,7 @@ canvas.grid(row=0, column=0, columnspan=3, pady=(0, 20))
 Label(text="Website:", bg=BG_COLOR, fg=LABEL_FG, font=FONT).grid(row=1, column=0, sticky="e", padx=(0, 10), pady=6)
 Label(text="Email/Username:", bg=BG_COLOR, fg=LABEL_FG, font=FONT).grid(row=2, column=0, sticky="e", padx=(0, 10), pady=6)
 Label(text="Password:", bg=BG_COLOR, fg=LABEL_FG, font=FONT).grid(row=3, column=0, sticky="e", padx=(0, 10), pady=6)
+Label(text="Category:", bg=BG_COLOR, fg=LABEL_FG, font=FONT).grid(row=5, column=0, sticky="e", padx=(0, 10), pady=6)
 
 # Entries
 website_entry = Entry(width=22, bg=ENTRY_BG, fg=ENTRY_FG, insertbackground=ENTRY_FG, relief="flat", font=FONT)
@@ -252,18 +284,34 @@ email_entry.grid(row=2, column=1, columnspan=2, sticky="ew", ipady=5)
 password_entry = Entry(width=22, bg=ENTRY_BG, fg=ENTRY_FG, insertbackground=ENTRY_FG, relief="flat", font=FONT, show="*")
 password_entry.grid(row=3, column=1, sticky="ew", ipady=5)
 
+# Strength label sits on row 4, spanning under the password field
+strength_label = Label(text="", bg=BG_COLOR, font=FONT)
+strength_label.grid(row=4, column=1, sticky="w", pady=(0, 4))
+
+# Category dropdown on row 5
 category_var = StringVar(window)
 category_var.set("Personal")
-
-category_label = Label(text="Category:", bg=BG_COLOR, fg=LABEL_FG, font=FONT)
-category_label.grid(row=4, column=0, sticky="e", padx=(0, 10), pady=6)
 
 category_menu = OptionMenu(window, category_var, "Personal", "Health", "Finance", "Family", "Work")
 category_menu.config(bg=ENTRY_BG, fg=ENTRY_FG, activebackground=BTN_ACCENT, activeforeground=BTN_FG,
                      relief="flat", font=FONT, highlightthickness=0)
 category_menu["menu"].config(bg=ENTRY_BG, fg=ENTRY_FG, font=FONT)
-category_menu.grid(row=4, column=1, sticky="ew", pady=6)
+category_menu.grid(row=5, column=1, sticky="ew", pady=6)
 
+# Password strength trace
+def update_strength(*args):
+    pwd = password_entry.get()
+    if pwd:
+        label, color = check_password_strength(pwd)
+        strength_label.config(text=f"Strength: {label}", fg=color)
+    else:
+        strength_label.config(text="")
+
+password_var = StringVar()
+password_entry.config(textvariable=password_var)
+password_var.trace_add("write", update_strength)
+
+# Toggle button
 def toggle_password():
     if password_entry.cget("show") == "*":
         password_entry.config(show="")
@@ -287,16 +335,17 @@ gen_btn.grid(row=3, column=2, sticky="ew", padx=(8, 0), ipady=5)
 
 add_btn = Button(text="Save", bg=BTN_BG, fg=BTN_FG, relief="flat", font=FONT_BOLD,
                  activebackground=BTN_ACCENT, activeforeground=BTN_FG, cursor="hand2", command=save)
-add_btn.grid(row=5, column=1, columnspan=2, sticky="ew", pady=(16, 0), ipady=6)
+add_btn.grid(row=6, column=1, columnspan=2, sticky="ew", pady=(16, 0), ipady=6)
 
 emergency_btn = Button(text="Emergency Info", bg="#c0392b", fg=BTN_FG, relief="flat", font=FONT_BOLD,
                        activebackground="#a93226", activeforeground=BTN_FG, cursor="hand2",
                        command=lambda: open_emergency_form(window, cipher, BG_COLOR, ENTRY_BG, ENTRY_FG, LABEL_FG, BTN_BG, BTN_FG, BTN_ACCENT, FONT, FONT_BOLD))
-emergency_btn.grid(row=6, column=1, columnspan=2, sticky="ew", pady=(8, 0), ipady=6)
+emergency_btn.grid(row=7, column=1, columnspan=2, sticky="ew", pady=(8, 0), ipady=6)
 
 vault_btn = Button(text="View Vault", bg=BTN_ACCENT, fg=BTN_FG, relief="flat", font=FONT_BOLD,
                    activebackground=BTN_BG, activeforeground=BTN_FG, cursor="hand2",
                    command=lambda: open_category_view(window, cipher, BG_COLOR, ENTRY_BG, ENTRY_FG, LABEL_FG, BTN_BG, BTN_FG, BTN_ACCENT, FONT, FONT_BOLD))
-vault_btn.grid(row=7, column=1, columnspan=2, sticky="ew", pady=(8, 0), ipady=6)
+vault_btn.grid(row=8, column=1, columnspan=2, sticky="ew", pady=(8, 0), ipady=6)
+
 
 window.mainloop()
