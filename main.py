@@ -129,16 +129,18 @@ def save():
     website = website_entry.get()
     email = email_entry.get()
     password = password_entry.get()
+    category = category_var.get()
 
     if len(website) == 0 or len(password) == 0:
         messagebox.showinfo(title="ERROR", message="Please make sure you haven't left any fields empty.")
         return
 
-    add_entry(cipher, "password", website, {"email": email, "password": password})
+    add_entry(cipher, "password", website, {"email": email, "password": password, "category": category})
 
     website_entry.delete(0, END)
     email_entry.delete(0, END)
     password_entry.delete(0, END)
+    category_var.set("Personal")
 
 # ---------------------------- SEARCH / EDIT / DELETE ------------------------------- #
 def find_password():
@@ -249,6 +251,18 @@ email_entry.grid(row=2, column=1, columnspan=2, sticky="ew", ipady=5)
 password_entry = Entry(width=22, bg=ENTRY_BG, fg=ENTRY_FG, insertbackground=ENTRY_FG, relief="flat", font=FONT, show="*")
 password_entry.grid(row=3, column=1, sticky="ew", ipady=5)
 
+category_var = StringVar(window)
+category_var.set("Personal")
+
+category_label = Label(text="Category:", bg=BG_COLOR, fg=LABEL_FG, font=FONT)
+category_label.grid(row=4, column=0, sticky="e", padx=(0, 10), pady=6)
+
+category_menu = OptionMenu(window, category_var, "Personal", "Health", "Finance", "Family", "Work")
+category_menu.config(bg=ENTRY_BG, fg=ENTRY_FG, activebackground=BTN_ACCENT, activeforeground=BTN_FG,
+                     relief="flat", font=FONT, highlightthickness=0)
+category_menu["menu"].config(bg=ENTRY_BG, fg=ENTRY_FG, font=FONT)
+category_menu.grid(row=4, column=1, sticky="ew", pady=6)
+
 def toggle_password():
     if password_entry.cget("show") == "*":
         password_entry.config(show="")
@@ -272,11 +286,11 @@ gen_btn.grid(row=3, column=2, sticky="ew", padx=(8, 0), ipady=5)
 
 add_btn = Button(text="Save", bg=BTN_BG, fg=BTN_FG, relief="flat", font=FONT_BOLD,
                  activebackground=BTN_ACCENT, activeforeground=BTN_FG, cursor="hand2", command=save)
-add_btn.grid(row=4, column=1, columnspan=2, sticky="ew", pady=(16, 0), ipady=6)
+add_btn.grid(row=5, column=1, columnspan=2, sticky="ew", pady=(16, 0), ipady=6)
 
 emergency_btn = Button(text="Emergency Info", bg="#c0392b", fg=BTN_FG, relief="flat", font=FONT_BOLD,
                        activebackground="#a93226", activeforeground=BTN_FG, cursor="hand2",
                        command=lambda: open_emergency_form(window, cipher, BG_COLOR, ENTRY_BG, ENTRY_FG, LABEL_FG, BTN_BG, BTN_FG, BTN_ACCENT, FONT, FONT_BOLD))
-emergency_btn.grid(row=5, column=1, columnspan=2, sticky="ew", pady=(8, 0), ipady=6)
+emergency_btn.grid(row=6, column=1, columnspan=2, sticky="ew", pady=(8, 0), ipady=6)
 
 window.mainloop()
