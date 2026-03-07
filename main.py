@@ -11,7 +11,7 @@ from cryptography.fernet import Fernet
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from vault import add_entry, get_entry, update_entry, delete_entry, get_all_entries, get_entries_by_type, load_vault, save_vault
-
+from emergency import open_emergency_form
 
 ph = PasswordHasher()
 
@@ -257,5 +257,10 @@ gen_btn.grid(row=3, column=2, sticky="ew", padx=(8, 0), ipady=5)
 add_btn = Button(text="Save", bg=BTN_BG, fg=BTN_FG, relief="flat", font=FONT_BOLD,
                  activebackground=BTN_ACCENT, activeforeground=BTN_FG, cursor="hand2", command=save)
 add_btn.grid(row=4, column=1, columnspan=2, sticky="ew", pady=(16, 0), ipady=6)
+
+emergency_btn = Button(text="Emergency Info", bg="#c0392b", fg=BTN_FG, relief="flat", font=FONT_BOLD,
+                       activebackground="#a93226", activeforeground=BTN_FG, cursor="hand2",
+                       command=lambda: open_emergency_form(window, cipher, BG_COLOR, ENTRY_BG, ENTRY_FG, LABEL_FG, BTN_BG, BTN_FG, BTN_ACCENT, FONT, FONT_BOLD))
+emergency_btn.grid(row=5, column=1, columnspan=2, sticky="ew", pady=(8, 0), ipady=6)
 
 window.mainloop()
