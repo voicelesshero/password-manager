@@ -12,6 +12,7 @@ from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from vault import add_entry, get_entry, update_entry, delete_entry, get_all_entries, get_entries_by_type, load_vault, save_vault
 from emergency import open_emergency_form
+import threading
 
 ph = PasswordHasher()
 
@@ -116,6 +117,13 @@ def generate_password():
     password_entry.insert(0, password)
     pyperclip.copy(password)
 
+def clear_clipboard():
+    pyperclip.copy("")
+
+timer = threading.Timer(30, clear_clipboard)
+timer.daemon = True
+timer.start()
+
 # ---------------------------- SAVE PASSWORD ------------------------------- #
 def save():
     website = website_entry.get()
@@ -153,8 +161,16 @@ def find_password():
     Label(dialog, text=f"Email:       {email}", bg=BG_COLOR, fg=LABEL_FG, font=FONT).grid(row=1, column=0, columnspan=3, sticky="w", pady=(0, 4))
     Label(dialog, text=f"Password: {password}", bg=BG_COLOR, fg=LABEL_FG, font=FONT).grid(row=2, column=0, columnspan=3, sticky="w", pady=(0, 16))
 
+    def copy_and_clear():
+        pyperclip.copy(password)
+        messagebox.showinfo("Copied", "Password copied to clipboard. Will clear in 30 seconds.")
+        timer = threading.Timer(30, lambda: pyperclip.copy(""))
+        timer.daemon = True
+        timer.start()
+
     Button(dialog, text="Copy Password", bg="#27ae60", fg=BTN_FG, relief="flat", font=FONT_BOLD,
-           cursor="hand2", command=lambda: [pyperclip.copy(password), messagebox.showinfo("Copied", "Password copied to clipboard!")]).grid(row=3, column=0, columnspan=3, sticky="ew", ipady=4, pady=(0, 8))
+           cursor="hand2", command=copy_and_clear).grid(row=3, column=0, columnspan=3, sticky="ew", ipady=4,
+                                                        pady=(0, 8))
 
     Button(dialog, text="Edit", bg=BTN_ACCENT, fg=BTN_FG, relief="flat", font=FONT_BOLD,
            cursor="hand2", command=lambda: edit_entry_dialog(dialog, website, email, password)).grid(row=4, column=0, padx=(0, 8), ipady=4, sticky="ew")
